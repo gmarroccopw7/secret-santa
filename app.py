@@ -6,7 +6,11 @@ app.secret_key = "supersecretkey123"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PERSONE_FILE = os.path.join(BASE_DIR, "data", "persone.json")
-ESTRATTI_FILE = os.path.join(BASE_DIR, "estratti.json")
+#ESTRATTI_FILE = os.path.join(BASE_DIR, "estratti.json")
+# Directory scrivibile su Railway/Render
+ESTRATTI_FILE = "/tmp/estratti.json"
+print(">>> PATH ESTRATTI:", ESTRATTI_FILE)
+print(">>> ESISTE?:", os.path.exists(ESTRATTI_FILE))
 
 # --- CARICAMENTO PERSONE ---
 with open(PERSONE_FILE, encoding="utf-8") as f:
@@ -91,4 +95,5 @@ def fai_estrazione():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
