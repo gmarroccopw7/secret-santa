@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block body %}
+<h2>🎁 Risultato per {{ utente }} 🎁</h2>
+<div id="slot" class="slot-box">Estrazione in corso...</div>
+
+<script>
+setTimeout(() => {
+    document.getElementById("slot").innerHTML = "<span class='big-name'>{{ estratto }}</span>";
+}, 2000);
+</script>
+{% endblock %}

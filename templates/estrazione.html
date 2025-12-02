@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block body %}
+<h2>Ciao {{ utente }} 🎅</h2>
+
+{% if gia_estratto %}
+<p>Hai già estratto: <strong>{{ gia_estratto }}</strong></p>
+{% else %}
+<form method="post" action="/fai_estrazione">
+    <button type="submit" class="btn">🎁 Estrai ora 🎁</button>
+</form>
+{% endif %}
+{% endblock %}

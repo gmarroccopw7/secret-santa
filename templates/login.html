@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block body %}
+<h1 class="title">🎄 Seleziona il tuo personaggio 🎄</h1>
+
+<div class="grid">
+    {% for persona in persone %}
+        <a href="/login/{{ persona }}" class="card">
+            <img src="/static/icons/{{ icone[persona] }}" class="avatar">
+            <div class="nome">{{ persona }}</div>
+        </a>
+    {% endfor %}
+</div>
+
+<!-- Neve -->
+<div class="neve">
+    {% for i in range(50) %}
+        <span style="left:{{ (loop.index0*2) % 100 }}vw; animation-duration:{{ 5 + loop.index0%5 }}s; width:{{2+loop.index0%3}}px; height:{{2+loop.index0%3}}px;"></span>
+    {% endfor %}
+</div>
+{% endblock %}

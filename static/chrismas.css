@@ -1,0 +1,16 @@
+.christmas-bg {
+    background: 
+        url("https://i.ibb.co/vz0ZtvK/snow-overlay.png"),
+        linear-gradient(#b30000, #4a0000);
+    background-size: cover;
+    background-blend-mode: overlay;
+}
+
+.home-card {
+    background: rgba(255, 255, 255, 0.88);
+    max-width: 420px;
+    margin: 80px auto;
+    padding: 30px;
+    text-align: center;
+    border-radius: 20px;
+}
