@@ -12,6 +12,16 @@ ESTRATTI_FILE = os.path.join(BASE_DIR, "estratti.json")
 with open(PERSONE_FILE, encoding="utf-8") as f:
     PERSONE = json.load(f)["persone"]
 
+# --- CREAZIONE AUTOMATICA DI estratti.json SE NON ESISTE ---
+if not os.path.exists(ESTRATTI_FILE):
+    print("⚠ estratti.json non trovato, lo creo...")
+    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+        json.dump({"estratti": []}, f, ensure_ascii=False, indent=4)
+
+# --- CARICAMENTO ESTRATTI (ora il file esiste sicuramente) ---
+with open(ESTRATTI_FILE, encoding="utf-8") as f:
+    ESTRATTI = json.load(f)["estratti"]
+
 # --- ICONE ASSOCIATE ---
 ICONE = [
     "renna.png",
@@ -81,3 +91,4 @@ def fai_estrazione():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
