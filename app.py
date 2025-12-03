@@ -1,35 +1,43 @@
-import os
-from flask import Flask, render_template, redirect, session, url_for
-import json, random, tempfile, traceback
+from flask import Flask, render_template, redirect, session, url_for, request
+import json, os, random, tempfile, traceback
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
 
-app.debug = True
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-
-@app.before_request
-def log_request_info():
-    print(f"🔥 PATH RICHIESTO: {os.getcwd()}")
-    print(f"🔥 LISTA TEMPLATES: {os.listdir(os.path.join(BASE_DIR, 'templates'))}")
-
-# --- Percorsi file ---
+# --- Percorsi ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PERSONE_FILE = os.path.join(BASE_DIR, "data", "persone.json")
-ESTRATTI_FILE = os.path.join(tempfile.gettempdir(), "estratti.json")
+ESCLUSIONI_FILE = os.path.join(BASE_DIR, "data", "esclusioni.json")
 
-# --- Logging globale per errori ---
-@app.errorhandler(Exception)
-def handle_exception(e):
-    print("🔥 ERRORE INTERNO FLASK:")
-    traceback.print_exc()
-    return "Internal server error", 500
+# File estrazioni dinamico → in /tmp (compatibile con Railway/Render)
+ESTRATTI_FILE = os.path.join(tempfile.gettempdir(), "estratti.json")
+ESTRATTI_GIOCATTOLI_FILE = os.path.join(tempfile.gettempdir(), "estratti_giocattoli.json")
+
+def init_file(path):
+    """Ricrea sempre i file a ogni avvio (richiesto da te)."""
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({}, f, indent=4)
+        print(f"[INIT] Ricreato file: {path}")
+    except Exception as e:
+        print(f"[ERRORE INIT] {e}")
+
+# Ricreo i file a ogni deploy/riavvio
+init_file(ESTRATTI_FILE)
+init_file(ESTRATTI_GIOCATTOLI_FILE)
 
 # --- Caricamento persone ---
 with open(PERSONE_FILE, encoding="utf-8") as f:
     PERSONE = json.load(f)["persone"]
 
-# --- ICONE ASSOCIATE ---
+# --- Caricamento esclusioni ---
+if os.path.exists(ESCLUSIONI_FILE):
+    with open(ESCLUSIONI_FILE, encoding="utf-8") as f:
+        ESCLUSIONI = json.load(f)
+else:
+    ESCLUSIONI = {p: [] for p in PERSONE}
+
+# --- Icone utenti ---
 ICONE = [
     "babbo_natale.png",
     "renna.png",
@@ -43,30 +51,6 @@ ICONE = [
 ]
 ICON_MAP = {p: ICONE[i % len(ICONE)] for i, p in enumerate(PERSONE)}
 
-# --- Creazione automatica estratti.json se non esiste ---
-#if not os.path.exists(ESTRATTI_FILE):
-#    print(f"⚠ estratti.json non trovato, lo creo in {ESTRATTI_FILE}")
-#    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
-#        json.dump({"estratti": []}, f, ensure_ascii=False, indent=4)
-
-# --- Ricrea sempre estratti.json all'avvio ---
-if os.path.exists(ESTRATTI_FILE):
-    print(f"⚠ estratti.json esistente trovato, lo cancello: {ESTRATTI_FILE}")
-    os.remove(ESTRATTI_FILE)
-
-print(f"⚠ Creo nuovo estratti.json in {ESTRATTI_FILE}")
-with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
-    json.dump({"estratti": []}, f, ensure_ascii=False, indent=4)
-
-# --- Caricamento estratti ---
-with open(ESTRATTI_FILE, encoding="utf-8") as f:
-    ESTRATTI = json.load(f)["estratti"]
-
-# --- Funzione per salvare estratti ---
-def salva_estratti():
-    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
-        json.dump({"estratti": ESTRATTI}, f, ensure_ascii=False, indent=4)
-
 # --- ROUTE LOGIN ---
 @app.route("/")
 def login():
@@ -79,58 +63,84 @@ def do_login(nome):
     session["utente"] = nome
     return redirect("/estrazione")
 
-# --- ROUTE ESTRAZIONE ---
+# --- ROUTE ESTRAZIONI ---
 @app.route("/estrazione")
 def estrazione():
     if "utente" not in session:
         return redirect("/")
     utente = session["utente"]
-    try:
-        with open(ESTRATTI_FILE) as f:
-            estratti = json.load(f)
-    except:
-        estratti = {}
-    gia_estratto = estratti.get(utente)
-    return render_template("estrazione.html", utente=utente, gia_estratto=gia_estratto)
 
-@app.route("/fai_estrazione", methods=["POST"])
-def fai_estrazione():
+    # Carica estrazioni
+    with open(ESTRATTI_FILE) as f:
+        estratti1 = json.load(f)
+
+    with open(ESTRATTI_GIOCATTOLI_FILE) as f:
+        estratti2 = json.load(f)
+
+    return render_template(
+        "estrazione.html",
+        utente=utente,
+        gia1=estratti1.get(utente),
+        gia2=estratti2.get(utente)
+    )
+
+# --- ESTRAZIONE 1: Secret Santa ---
+@app.route("/fai_estrazione1", methods=["POST"])
+def fai_estrazione1():
     utente = session.get("utente")
     if not utente:
         return redirect("/")
 
-    candidati = [p for p in PERSONE if p != utente]
+    with open(ESTRATTI_FILE) as f:
+        estratti = json.load(f)
 
-    try:
-        with open(ESTRATTI_FILE) as f:
-            estratti = json.load(f)
-    except:
-        estratti = {}
-
-    # evitare duplicati
-    disponibili = [p for p in candidati if p not in estratti.values()]
-    if not disponibili:
-        risultato = random.choice(candidati)  # fallback se esauriti
+    if utente in estratti:
+        risultato = estratti[utente]
     else:
-        risultato = random.choice(disponibili)
+        candidati = [p for p in PERSONE if p != utente]
+        disponibili = [x for x in candidati if x not in estratti.values()]
+        risultato = random.choice(disponibili if disponibili else candidati)
+        estratti[utente] = risultato
+        with open(ESTRATTI_FILE, "w") as f:
+            json.dump(estratti, f, indent=4)
 
-    estratti[utente] = risultato
-    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
-        json.dump(estratti, f, indent=4)
+    return render_template("risultato.html", utente=utente, estratto=risultato, tipo="Secret Santa")
 
-    return render_template("risultato.html", utente=utente, estratto=risultato)
+# --- ESTRAZIONE 2: Giocattoli con esclusioni ---
+GIOCATTOLI = [
+    "orsetto di peluche",
+    "trenino di legno",
+    "cavallo a dondolo",
+    "pacco regalo",
+    "costruzioni",
+    "un libro",
+    "piatto di biscotti",
+    "bicchiere di latte",
+    "stella cometa"
+]
+
+@app.route("/fai_estrazione2", methods=["POST"])
+def fai_estrazione2():
+    utente = session.get("utente")
+    if not utente:
+        return redirect("/")
+
+    with open(ESTRATTI_GIOCATTOLI_FILE) as f:
+        estratti = json.load(f)
+
+    if utente in estratti:
+        risultato = estratti[utente]
+    else:
+        esclusi = ESCLUSIONI.get(utente, [])
+        candidati = [g for g in GIOCATTOLI if g not in esclusi]
+        disponibili = [g for g in candidati if g not in estratti.values()]
+        pool = disponibili if disponibili else candidati
+        risultato = random.choice(pool)
+        estratti[utente] = risultato
+        with open(ESTRATTI_GIOCATTOLI_FILE, "w") as f:
+            json.dump(estratti, f, indent=4)
+
+    return render_template("risultato.html", utente=utente, estratto=risultato, tipo="Giocattolo")
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
-
-
-
-
-
-
-
-
-
-
-
+    app.run(host="0.0.0.0", port=8080)
