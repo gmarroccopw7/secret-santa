@@ -1,0 +1,12 @@
+{
+    "Carlo": ["Roberta"],
+    "Roberta": ["Carlo"],
+    "Arianna": ["Elena", "Giorgia"],
+    "Giorgia": ["Elena", "Arianna"],
+    "Elena": ["Giorgia", "Arianna"],
+    "Andrea": [],
+    "Sofia": [],
+    "Lisa": [],
+    "Desiderio" : ["Anastasia"],
+    "Anastasia" : ["Desiderio"]
+}
