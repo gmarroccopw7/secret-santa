@@ -1,5 +1,6 @@
+import os
 from flask import Flask, render_template, redirect, session, url_for
-import json, os, random, tempfile, traceback
+import json, random, tempfile, traceback
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
@@ -113,6 +114,7 @@ def fai_estrazione():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
 
 
 
