@@ -1,8 +1,16 @@
 from flask import Flask, render_template, redirect, session, url_for
 import json, os, random, tempfile, traceback
 
+app.debug = True
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
+
+@app.before_request
+def log_request_info():
+    print(f"🔥 PATH RICHIESTO: {os.getcwd()}")
+    print(f"🔥 LISTA TEMPLATES: {os.listdir(os.path.join(BASE_DIR, 'templates'))}")
 
 # --- Percorsi file ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -104,6 +112,7 @@ def fai_estrazione():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
