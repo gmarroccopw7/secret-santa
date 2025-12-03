@@ -1,11 +1,11 @@
 from flask import Flask, render_template, redirect, session, url_for
 import json, os, random, tempfile, traceback
 
-app.debug = True
-app.config['TEMPLATES_AUTO_RELOAD'] = True
-
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
+
+app.debug = True
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 @app.before_request
 def log_request_info():
@@ -112,6 +112,7 @@ def fai_estrazione():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
