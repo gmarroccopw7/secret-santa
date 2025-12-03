@@ -44,10 +44,19 @@ ICONE = [
 ICON_MAP = {p: ICONE[i % len(ICONE)] for i, p in enumerate(PERSONE)}
 
 # --- Creazione automatica estratti.json se non esiste ---
-if not os.path.exists(ESTRATTI_FILE):
-    print(f"⚠ estratti.json non trovato, lo creo in {ESTRATTI_FILE}")
-    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
-        json.dump({"estratti": []}, f, ensure_ascii=False, indent=4)
+#if not os.path.exists(ESTRATTI_FILE):
+#    print(f"⚠ estratti.json non trovato, lo creo in {ESTRATTI_FILE}")
+#    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+#        json.dump({"estratti": []}, f, ensure_ascii=False, indent=4)
+
+# --- Ricrea sempre estratti.json all'avvio ---
+if os.path.exists(ESTRATTI_FILE):
+    print(f"⚠ estratti.json esistente trovato, lo cancello: {ESTRATTI_FILE}")
+    os.remove(ESTRATTI_FILE)
+
+print(f"⚠ Creo nuovo estratti.json in {ESTRATTI_FILE}")
+with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+    json.dump({"estratti": []}, f, ensure_ascii=False, indent=4)
 
 # --- Caricamento estratti ---
 with open(ESTRATTI_FILE, encoding="utf-8") as f:
@@ -114,6 +123,7 @@ def fai_estrazione():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
 
 
 
