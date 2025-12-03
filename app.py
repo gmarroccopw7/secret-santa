@@ -1,5 +1,5 @@
 from flask import Flask, render_template, redirect, session, url_for
-import json, os, random
+import json, os, random, tempfile, traceback
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
@@ -20,6 +20,20 @@ def handle_exception(e):
 with open(PERSONE_FILE, encoding="utf-8") as f:
     PERSONE = json.load(f)["persone"]
 
+# --- ICONE ASSOCIATE ---
+ICONE = [
+    "babbo_natale.png",
+    "renna.png",
+    "pupazzo_neve.png",
+    "pan_zenzero.png",
+    "albero_natale.png",
+    "palla_natale.png",
+    "pacco_regalo.png",
+    "panettone.jpg",
+    "stella.png"
+]
+ICON_MAP = {p: ICONE[i % len(ICONE)] for i, p in enumerate(PERSONE)}
+
 # --- Creazione automatica estratti.json se non esiste ---
 if not os.path.exists(ESTRATTI_FILE):
     print(f"⚠ estratti.json non trovato, lo creo in {ESTRATTI_FILE}")
@@ -34,20 +48,6 @@ with open(ESTRATTI_FILE, encoding="utf-8") as f:
 def salva_estratti():
     with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
         json.dump({"estratti": ESTRATTI}, f, ensure_ascii=False, indent=4)
-
-# --- ICONE ASSOCIATE ---
-ICONE = [
-    "babbo_natale.png",
-    "renna.png",
-    "pupazzo_neve.png",
-    "pan_zenzero.png",
-    "albero_natale.png",
-    "palla_natale.png",
-    "pacco_regalo.png",
-    "panettone.jpg",
-    "stella.png"
-]
-ICON_MAP = {p: ICONE[i % len(ICONE)] for i, p in enumerate(PERSONE)}
 
 # --- ROUTE LOGIN ---
 @app.route("/")
@@ -104,6 +104,7 @@ def fai_estrazione():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
