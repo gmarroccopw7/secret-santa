@@ -1,12 +1,15 @@
 {% extends "base.html" %}
+{% block content %}
 
-{% block body %}
-<h2>🎁 Risultato per {{ utente }} 🎁</h2>
-<div id="slot" class="slot-box">Estrazione in corso...</div>
+<div class="result-card">
+    <h2>🎉 Risultato {{ tipo }} 🎉</h2>
+    <p><strong>{{ utente }}</strong>, hai estratto:</p>
 
-<script>
-setTimeout(() => {
-    document.getElementById("slot").innerHTML = "<span class='big-name'>{{ estratto }}</span>";
-}, 2000);
-</script>
+    <div class="big-result">
+        {{ estratto }}
+    </div>
+
+    <a class="btn" href="/estrazione">Torna indietro</a>
+</div>
+
 {% endblock %}
