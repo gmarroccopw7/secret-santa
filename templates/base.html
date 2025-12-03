@@ -1,11 +1,25 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-    <meta charset="UTF-8">
-    <title>Secret Santa 🎄</title>
-    <link rel="stylesheet" href="/static/style.css">
+<meta charset="UTF-8">
+<title>Secret Santa</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body class="christmas-bg">
-{% block body %}{% endblock %}
+<body>
+
+<div class="snow"></div>
+
+<header>
+    <h1>🎄 Secret Santa & Christmas Draw 🎁</h1>
+</header>
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<footer>
+    <p>✨ Merry Christmas ✨</p>
+</footer>
+
 </body>
 </html>
