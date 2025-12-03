@@ -4,37 +4,41 @@ import json, os, random
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
 
+# --- Percorsi file ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PERSONE_FILE = os.path.join(BASE_DIR, "data", "persone.json")
-#ESTRATTI_FILE = os.path.join(BASE_DIR, "estratti.json")
+ESTRATTI_FILE = os.path.join(tempfile.gettempdir(), "estratti.json")
 
-# Directory scrivibile su Railway/Render
-ESTRATTI_FILE = "/tmp/estratti.json"
-print(">>> PATH ESTRATTI:", ESTRATTI_FILE)
-print(">>> ESISTE?:", os.path.exists(ESTRATTI_FILE))
+# --- Logging globale per errori ---
+@app.errorhandler(Exception)
+def handle_exception(e):
+    print("🔥 ERRORE INTERNO FLASK:")
+    traceback.print_exc()
+    return "Internal server error", 500
 
-# --- CARICAMENTO PERSONE ---
+# --- Caricamento persone ---
 with open(PERSONE_FILE, encoding="utf-8") as f:
     PERSONE = json.load(f)["persone"]
 
-# --- CREAZIONE AUTOMATICA DI estratti.json SE NON ESISTE ---
+# --- Creazione automatica estratti.json se non esiste ---
 if not os.path.exists(ESTRATTI_FILE):
-    print("⚠ estratti.json non trovato, lo creo...")
+    print(f"⚠ estratti.json non trovato, lo creo in {ESTRATTI_FILE}")
     with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
         json.dump({"estratti": []}, f, ensure_ascii=False, indent=4)
 
-print(">>> ESISTE?:", os.path.exists(ESTRATTI_FILE))
-
-# --- CARICAMENTO ESTRATTI (ora il file esiste sicuramente) ---
+# --- Caricamento estratti ---
 with open(ESTRATTI_FILE, encoding="utf-8") as f:
     ESTRATTI = json.load(f)["estratti"]
 
-print(">>> ESISTE?:", os.path.exists(ESTRATTI_FILE))
+# --- Funzione per salvare estratti ---
+def salva_estratti():
+    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+        json.dump({"estratti": ESTRATTI}, f, ensure_ascii=False, indent=4)
 
 # --- ICONE ASSOCIATE ---
 ICONE = [
-    "renna.png",
     "babbo_natale.png",
+    "renna.png",
     "pupazzo_neve.png",
     "pan_zenzero.png",
     "albero_natale.png",
@@ -100,6 +104,7 @@ def fai_estrazione():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
