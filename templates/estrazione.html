@@ -1,13 +1,31 @@
 {% extends "base.html" %}
+{% block content %}
 
-{% block body %}
-<h2>Ciao {{ utente }} 🎅</h2>
+<h2>Ciao {{ utente }}! 🎅</h2>
 
-{% if gia_estratto %}
-<p>Hai già estratto: <strong>{{ gia_estratto }}</strong></p>
-{% else %}
-<form method="post" action="/fai_estrazione">
-    <button type="submit" class="btn">🎁 Estrai ora 🎁</button>
-</form>
-{% endif %}
+<div class="box">
+
+    <h3>🎁 Estrazione Secret Santa</h3>
+    {% if gia1 %}
+        <p>Hai già estratto: <strong>{{ gia1 }}</strong></p>
+    {% else %}
+        <form method="POST" action="/fai_estrazione1">
+            <button class="btn">Estrai partecipante 🎄</button>
+        </form>
+    {% endif %}
+</div>
+
+<br>
+
+<div class="box">
+    <h3>🧸 Estrazione del Giocattolo</h3>
+    {% if gia2 %}
+        <p>Hai già ricevuto: <strong>{{ gia2 }}</strong></p>
+    {% else %}
+        <form method="POST" action="/fai_estrazione2">
+            <button class="btn btn2">Estrai giocattolo ⭐</button>
+        </form>
+    {% endif %}
+</div>
+
 {% endblock %}
