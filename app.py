@@ -120,11 +120,16 @@ for i, nome in enumerate(tutti):
     ICON_MAP[nome] = ICONE[i % len(ICONE)]
 
 # Ricrea il file estratti a ogni avvio (come nel tuo attuale comportamento)
-if os.path.exists(ESTRATTI_FILE):
-    os.remove(ESTRATTI_FILE)
+#if os.path.exists(ESTRATTI_FILE):
+#    os.remove(ESTRATTI_FILE)
+#
+#with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+#    json.dump({}, f)
+# Creiamo il file estratti solo se non esiste
 
-with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
-    json.dump({}, f)
+if not os.path.exists(ESTRATTI_FILE):
+    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+        json.dump({}, f)
 
 # --- Calcola mappa globale dei figli (figlio -> figlio_estratto) ---
 MAPPA_FIGLI = calcola_assegnazione_figli(FIGLI, ASSOCIAZIONI, ESCLUSIONI)
@@ -290,3 +295,4 @@ def admin_reset():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
