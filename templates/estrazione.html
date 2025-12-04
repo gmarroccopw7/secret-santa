@@ -1,31 +1,130 @@
-{% extends "base.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Estrazione</title>
 
-<h2>Ciao {{ utente }}! 🎅</h2>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    padding: 25px;
+    background: #b30000; /* rosso natale */
+    background-size: cover;
+}
 
-<div class="box">
+        h1, h2, h3 {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .contenitore {
+            max-width: 700px;
+            margin: auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .btn {
+            padding: 10px 15px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn-primary { background: #d62828; color: white; }
+        .btn-secondary { background: #457b9d; color: white; }
+        .estratto {
+            margin: 10px 0;
+            padding: 10px 15px;
+            background: #f1f1f1;
+            border-radius: 6px;
+            font-size: 17px;
+        }
+        .riepilogo ul {
+            padding-left: 20px;
+        }
+        .riepilogo li {
+            margin-bottom: 5px;
+        }
+        hr {
+            margin: 25px 0;
+        }
+		.icon-btn {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    margin-right: 8px;
+}
 
-    <h3>🎁 Estrazione Secret Santa</h3>
-    {% if gia1 %}
-        <p>Hai già estratto: <strong>{{ gia1 }}</strong></p>
+    </style>
+</head>
+
+<body>
+
+<div class="contenitore">
+
+    <h1>🎄 Estrazione di Natale</h1>
+
+    <!-- ======================= -->
+    <!--     SEZIONE FAMIGLIA    -->
+    <!-- ======================= -->
+
+    <h2>Babbo Natale porterà il regalo a:</h2>
+
+    {% if estratti.get(utente) %}
+        <div class="estratto">
+            <strong>{{ utente }}</strong> → {{ estratti[utente] }} 🎄
+        </div>
     {% else %}
-        <form method="POST" action="/fai_estrazione1">
-            <button class="btn">Estrai partecipante 🎄</button>
+        <form method="POST" action="/fai_estrazione">
+            <input type="hidden" name="estrattore" value="{{ utente }}">
+            <button type="submit" class="btn btn-primary">
+    <img src="{{ url_for('static', filename='icons/' ~ icone[utente]) }}"
+         alt="icona"
+         class="icon-btn">
+    Estrai famiglia
+</button>
+
         </form>
     {% endif %}
-</div>
 
-<br>
 
-<div class="box">
-    <h3>🧸 Estrazione del Giocattolo</h3>
-    {% if gia2 %}
-        <p>Hai già ricevuto: <strong>{{ gia2 }}</strong></p>
-    {% else %}
-        <form method="POST" action="/fai_estrazione2">
-            <button class="btn btn2">Estrai giocattolo ⭐</button>
-        </form>
+    <!-- ======================= -->
+    <!--     SEZIONE FIGLI       -->
+    <!-- ======================= -->
+
+    {% set figli = ASSOCIAZIONI.get(utente, []) %}
+
+    {% if figli %}
+        <h3>I piccoli aiutanti di Babbo Natale porteranno il loro regalo a:</h3>
+
+        {% for figlio in figli %}
+
+            {% if estratti.get(figlio) %}
+                <div class="estratto">
+                    {{ figlio }} → {{ estratti[figlio] }} 🎁
+                </div>
+            {% else %}
+                <form method="POST" action="/fai_estrazione">
+                    <input type="hidden" name="estrattore" value="{{ figlio }}">
+                    <button type="submit" class="btn btn-secondary">
+    <img src="{{ url_for('static', filename='icons/' ~ icone[figlio]) }}"
+         alt="icona"
+         class="icon-btn">
+    Estrai {{ figlio }}
+</button>
+
+                </form>
+            {% endif %}
+
+        {% endfor %}
     {% endif %}
+
+<p style="text-align:center; margin-top:20px;">🎅 Buona estrazione a tutti!</p>
+
+
 </div>
 
-{% endblock %}
+</body>
+</html>

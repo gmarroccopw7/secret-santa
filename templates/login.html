@@ -1,15 +1,93 @@
-{% extends "base.html" %}
-{% block content %}
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Login Famiglia</title>
 
-<h2>Scegli il tuo nome</h2>
+    <style>
+        body {
+    font-family: Arial, sans-serif;
+    padding: 25px;
+    background: #b30000; /* rosso Natale */
+}
 
-<div class="people-grid">
-    {% for p in persone %}
-    <a class="person-card" href="/login/{{ p }}">
-        <img src="{{ url_for('static', filename=icone[p]) }}">
-        <span>{{ p }}</span>
-    </a>
-    {% endfor %}
+        .contenitore {
+            display: inline-block;
+            padding: 25px;
+            background: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        .famiglia-btn {
+            display: block;
+            margin: 10px auto;
+            padding: 10px 20px;
+            background: #d62828;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        .famiglia-btn:hover {
+            background: #b51f1f;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+		.icon-btn {
+    width: 24px;
+    height: 24px;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+    </style>
+</head>
+
+<body>
+
+<div class="contenitore">
+    <h1>🎅 Benvenuti nell'estrazione di Natale!</h1>
+    <p>Seleziona la tua famiglia:</p>
+
+    {% for famiglia in persone %}
+    <form method="GET" action="/login/{{ famiglia }}">
+        <button type="submit" class="famiglia-btn">
+            <img src="{{ url_for('static', filename='icons/' ~ icone[famiglia]) }}"
+                 alt="icona"
+                 class="icon-btn">
+            {{ famiglia }}
+        </button>
+    </form>
+{% endfor %}
+
 </div>
 
-{% endblock %}
+<hr>
+<p style="text-align:center; margin-top:20px;">
+    <a href="/admin_login" style="color:white; font-weight:bold;">
+        🔐 Accedi come amministratore
+    </a>
+</p>
+
+{% if show_admin_form %}
+<div style="margin-top:20px; padding:20px; background:#ffffffaa; border-radius:10px; max-width:400px; margin-left:auto; margin-right:auto;">
+    <h3 style="text-align:center;">Area amministratore</h3>
+    <form method="POST" action="/do_admin_login">
+        <label>Username</label>
+        <input type="text" name="username" required class="form-control" style="width:100%; margin-bottom:10px;">
+
+        <label>Password</label>
+        <input type="password" name="password" required class="form-control" style="width:100%; margin-bottom:10px;">
+
+        <button type="submit" class="btn btn-primary" style="width:100%;">
+            Accedi
+        </button>
+    </form>
+</div>
+{% endif %}
+
+
+</body>
+</html>
