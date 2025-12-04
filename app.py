@@ -1,43 +1,105 @@
-from flask import Flask, render_template, redirect, session, url_for, request
-import json, os, random, tempfile, traceback
+import os
+import json
+import random
+import tempfile
+import traceback
+from flask import Flask, render_template, redirect, session, request
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey123"
+app.debug = True
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-# --- Percorsi ---
+def calcola_assegnazione_figli(figli, associazioni, esclusioni):
+    """
+    figli: lista di tutti i figli (FIGLI)
+    associazioni: dict famiglia -> [figli]
+    esclusioni: dict figlio -> [altri figli da escludere (fratelli, ecc.)]
+    """
+    # Mappa figlio -> famiglia di appartenenza
+    figlio_to_famiglia = {}
+    for famiglia, lista_figli in associazioni.items():
+        for f in lista_figli:
+            figlio_to_famiglia[f] = famiglia
+
+    # Precalcolo dei candidati validi per ogni figlio (senza considerare ancora i 'già usati')
+    candidati_possibili = {}
+    for f in figli:
+        famiglia_f = figlio_to_famiglia[f]
+        fratelli = set(esclusioni.get(f, []))
+        possibili = []
+        for target in figli:
+            if target == f:
+                continue  # non può estrarre sé stesso
+            # niente figli della stessa famiglia
+            if figlio_to_famiglia[target] == famiglia_f:
+                continue
+            # niente fratelli/sorelle
+            if target in fratelli:
+                continue
+            possibili.append(target)
+        candidati_possibili[f] = possibili
+
+    assegnazione = {}
+    usati = set()
+
+    # Ordiniamo i figli per quelli con meno opzioni, così il backtracking è più efficiente
+    figli_ordinati = sorted(figli, key=lambda x: len(candidati_possibili[x]))
+
+    def backtrack(idx):
+        if idx == len(figli_ordinati):
+            return True  # tutti assegnati
+
+        f = figli_ordinati[idx]
+        for candidato in candidati_possibili[f]:
+            if candidato in usati:
+                continue
+            assegnazione[f] = candidato
+            usati.add(candidato)
+            if backtrack(idx + 1):
+                return True
+            # backtrack
+            usati.remove(candidato)
+            del assegnazione[f]
+
+        return False
+
+    ok = backtrack(0)
+    if not ok:
+        # Qui puoi decidere cosa fare: raise, loggare, ecc.
+        raise RuntimeError("Impossibile trovare una assegnazione valida per tutti i figli")
+
+    return assegnazione
+
+# --- Percorsi file ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PERSONE_FILE = os.path.join(BASE_DIR, "data", "persone.json")
+ASSOCIAZIONE_FILE = os.path.join(BASE_DIR, "data", "associazioni.json")
 ESCLUSIONI_FILE = os.path.join(BASE_DIR, "data", "esclusioni.json")
 
-# File estrazioni dinamico → in /tmp (compatibile con Railway/Render)
+# File dell'estrazione temporaneo
 ESTRATTI_FILE = os.path.join(tempfile.gettempdir(), "estratti.json")
-ESTRATTI_GIOCATTOLI_FILE = os.path.join(tempfile.gettempdir(), "estratti_giocattoli.json")
 
-def init_file(path):
-    """Ricrea sempre i file a ogni avvio (richiesto da te)."""
-    try:
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump({}, f, indent=4)
-        print(f"[INIT] Ricreato file: {path}")
-    except Exception as e:
-        print(f"[ERRORE INIT] {e}")
-
-# Ricreo i file a ogni deploy/riavvio
-init_file(ESTRATTI_FILE)
-init_file(ESTRATTI_GIOCATTOLI_FILE)
-
-# --- Caricamento persone ---
+# --- Carica famiglie ---
 with open(PERSONE_FILE, encoding="utf-8") as f:
     PERSONE = json.load(f)["persone"]
 
-# --- Caricamento esclusioni ---
-if os.path.exists(ESCLUSIONI_FILE):
-    with open(ESCLUSIONI_FILE, encoding="utf-8") as f:
-        ESCLUSIONI = json.load(f)
-else:
-    ESCLUSIONI = {p: [] for p in PERSONE}
+# --- Carica associazioni famiglia → figli ---
+with open(ASSOCIAZIONE_FILE, encoding="utf-8") as f:
+    ASSOCIAZIONI = json.load(f)
 
-# --- Icone utenti ---
+# --- Ricava lista globale FIGLI ---
+FIGLI = []
+for figli in ASSOCIAZIONI.values():
+    FIGLI.extend(figli)
+
+# --- Carica esclusioni (figlio → fratelli) ---
+with open(ESCLUSIONI_FILE, encoding="utf-8") as f:
+    ESCLUSIONI = json.load(f)
+
+# -------------------------
+# Icone e mappa
+# -------------------------
 ICONE = [
     "babbo_natale.png",
     "renna.png",
@@ -46,10 +108,27 @@ ICONE = [
     "albero_natale.png",
     "palla_natale.png",
     "pacco_regalo.png",
-    "panettone.jpg",
+    "panettone.png",
     "stella.png"
 ]
-ICON_MAP = {p: ICONE[i % len(ICONE)] for i, p in enumerate(PERSONE)}
+
+# costruiamo una mappa icone per famiglie + figli
+ICON_MAP = {}
+tutti = PERSONE + FIGLI  # famiglie + figli
+
+for i, nome in enumerate(tutti):
+    ICON_MAP[nome] = ICONE[i % len(ICONE)]
+
+# Ricrea il file estratti a ogni avvio (come nel tuo attuale comportamento)
+if os.path.exists(ESTRATTI_FILE):
+    os.remove(ESTRATTI_FILE)
+
+with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+    json.dump({}, f)
+
+# --- Calcola mappa globale dei figli (figlio -> figlio_estratto) ---
+MAPPA_FIGLI = calcola_assegnazione_figli(FIGLI, ASSOCIAZIONI, ESCLUSIONI)
+print("Mappa figli calcolata:", MAPPA_FIGLI)
 
 # --- ROUTE LOGIN ---
 @app.route("/")
@@ -59,88 +138,155 @@ def login():
 @app.route("/login/<nome>")
 def do_login(nome):
     if nome not in PERSONE:
-        return "Utente non valido", 400
+        return "Famiglia non valida", 400
     session["utente"] = nome
     return redirect("/estrazione")
 
-# --- ROUTE ESTRAZIONI ---
 @app.route("/estrazione")
 def estrazione():
     if "utente" not in session:
         return redirect("/")
+
     utente = session["utente"]
 
-    # Carica estrazioni
-    with open(ESTRATTI_FILE) as f:
-        estratti1 = json.load(f)
-
-    with open(ESTRATTI_GIOCATTOLI_FILE) as f:
-        estratti2 = json.load(f)
+    # Carica estratti attuali
+    try:
+        with open(ESTRATTI_FILE) as f:
+            estratti = json.load(f)
+    except:
+        estratti = {}
 
     return render_template(
         "estrazione.html",
         utente=utente,
-        gia1=estratti1.get(utente),
-        gia2=estratti2.get(utente)
+        estratti=estratti,
+        ASSOCIAZIONI=ASSOCIAZIONI,
+        icone=ICON_MAP,
     )
 
-# --- ESTRAZIONE 1: Secret Santa ---
-@app.route("/fai_estrazione1", methods=["POST"])
-def fai_estrazione1():
-    utente = session.get("utente")
-    if not utente:
+
+@app.route("/fai_estrazione", methods=["POST"])
+def fai_estrazione():
+    if "utente" not in session:
         return redirect("/")
 
-    with open(ESTRATTI_FILE) as f:
-        estratti = json.load(f)
+    estrattore = request.form.get("estrattore")
 
-    if utente in estratti:
-        risultato = estratti[utente]
+    # Carica estratti attuali
+    try:
+        with open(ESTRATTI_FILE) as f:
+            estratti = json.load(f)
+    except:
+        estratti = {}
+
+    # Blocca chi ha già estratto
+    if estrattore in estratti:
+        return redirect("/estrazione")
+
+    # --- FAMIGLIA ---
+    if estrattore in PERSONE:
+
+        # Tutte le altre famiglie
+        candidati = [f for f in PERSONE if f != estrattore]
+
+        # Escludi famiglie già estratte
+        gia_estratti = set(estratti.values())
+        disponibili = [f for f in candidati if f not in gia_estratti]
+
+        # fallback se necessario
+        if not disponibili:
+            disponibili = candidati
+
+        estratti[estrattore] = random.choice(disponibili)
+
+    # --- FIGLIO ---
+    elif estrattore in FIGLI:
+
+        # Usa l’assegnazione globale calcolata all’avvio
+        if estrattore not in MAPPA_FIGLI:
+            return "Errore: nessuna assegnazione valida trovata", 500
+
+        estratti[estrattore] = MAPPA_FIGLI[estrattore]
+
     else:
-        candidati = [p for p in PERSONE if p != utente]
-        disponibili = [x for x in candidati if x not in estratti.values()]
-        risultato = random.choice(disponibili if disponibili else candidati)
-        estratti[utente] = risultato
-        with open(ESTRATTI_FILE, "w") as f:
-            json.dump(estratti, f, indent=4)
+        return "Errore: estrattore sconosciuto", 400
 
-    return render_template("risultato.html", utente=utente, estratto=risultato, tipo="Secret Santa")
+    # Salva gli estratti
+    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+        json.dump(estratti, f, indent=4)
 
-# --- ESTRAZIONE 2: Giocattoli con esclusioni ---
-GIOCATTOLI = [
-    "orsetto di peluche",
-    "trenino di legno",
-    "cavallo a dondolo",
-    "pacco regalo",
-    "costruzioni",
-    "un libro",
-    "piatto di biscotti",
-    "bicchiere di latte",
-    "stella cometa"
-]
+    return redirect("/estrazione")
 
-@app.route("/fai_estrazione2", methods=["POST"])
-def fai_estrazione2():
-    utente = session.get("utente")
-    if not utente:
+
+@app.route("/admin_login")
+def admin_login():
+    return render_template("login.html", persone=PERSONE, show_admin_form=True, icone=ICON_MAP)
+
+@app.route("/do_admin_login", methods=["POST"])
+def do_admin_login():
+    username = request.form.get("username")
+    password = request.form.get("password")
+
+    if username == "admin" and password == "estrazione":
+        session["admin"] = True
+        return redirect("/admin")
+    else:
+        return render_template(
+            "login.html",
+            persone=PERSONE,
+            show_admin_form=True,
+            error="Credenziali errate"
+        )
+
+@app.route("/admin")
+def admin():
+    if not session.get("admin"):
         return redirect("/")
 
-    with open(ESTRATTI_GIOCATTOLI_FILE) as f:
-        estratti = json.load(f)
+    # carica estrazioni aggiornate
+    try:
+        with open(ESTRATTI_FILE) as f:
+            estratti = json.load(f)
+    except:
+        estratti = {}
 
-    if utente in estratti:
-        risultato = estratti[utente]
-    else:
-        esclusi = ESCLUSIONI.get(utente, [])
-        candidati = [g for g in GIOCATTOLI if g not in esclusi]
-        disponibili = [g for g in candidati if g not in estratti.values()]
-        pool = disponibili if disponibili else candidati
-        risultato = random.choice(pool)
-        estratti[utente] = risultato
-        with open(ESTRATTI_GIOCATTOLI_FILE, "w") as f:
-            json.dump(estratti, f, indent=4)
+    # costruiamo la struttura per la tabella
+    tabella = []
+    for famiglia in PERSONE:
+        figli = ASSOCIAZIONI.get(famiglia, [])
+        
+        # estratto della famiglia
+        estratto_famiglia = estratti.get(famiglia, None)
 
-    return render_template("risultato.html", utente=utente, estratto=risultato, tipo="Giocattolo")
+        # estratti figli
+        estratti_figli = []
+        for figlio in figli:
+            if figlio in estratti:
+                estratti_figli.append(f"{figlio} → {estratti[figlio]}")
+            else:
+                estratti_figli.append(f"{figlio} → ❌ Non ancora")
+
+        tabella.append({
+            "famiglia": famiglia,
+            "estratto_famiglia": estratto_famiglia,
+            "figli": figli,
+            "stato_figli": estratti_figli
+        })
+
+    return render_template("admin.html", tabella=tabella)
+
+@app.route("/admin_reset", methods=["POST"])
+def admin_reset():
+    if not session.get("admin"):
+        return redirect("/")
+
+    # reset estratti.json
+    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+        json.dump({}, f)
+
+    return redirect("/admin")
+
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)

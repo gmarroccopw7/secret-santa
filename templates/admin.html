@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Area Amministratore</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #b30000;
+            padding: 30px;
+            color: white;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            color: black;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            vertical-align: top;
+        }
+        th {
+            background: #d62828;
+            color: white;
+            text-align: left;
+            font-size: 18px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .btn {
+            background: #f1f1f1;
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .btn:hover {
+            background: #ddd;
+        }
+        .center {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>🎅 Area Amministratore</h1>
+
+<table>
+    <tr>
+        <th>Famiglia</th>
+        <th>Estratto Famiglia</th>
+        <th>Figli</th>
+        <th>Stato Figli</th>
+    </tr>
+
+    {% for row in tabella %}
+    <tr>
+        <td>{{ row.famiglia }}</td>
+
+        <td>
+            {% if row.estratto_famiglia %}
+                ✔ {{ row.estratto_famiglia }} 🎄
+            {% else %}
+                ❌ Non ancora
+            {% endif %}
+        </td>
+
+        <td>
+            {% if row.figli %}
+                {{ row.figli | join(", ") }}
+            {% else %}
+                Nessun figlio
+            {% endif %}
+        </td>
+
+        <td>
+            {% for stato in row.stato_figli %}
+                {{ stato }}<br>
+            {% endfor %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<div class="center">
+    <form action="/admin_reset" method="POST">
+        <button class="btn">🔄 Reset Estratti</button>
+    </form>
+
+    <form action="/admin" method="GET">
+        <button class="btn">🔁 Aggiorna Tabella</button>
+    </form>
+</div>
+
+</body>
+</html>
