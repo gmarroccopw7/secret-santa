@@ -78,7 +78,8 @@ ASSOCIAZIONE_FILE = os.path.join(BASE_DIR, "data", "associazioni.json")
 ESCLUSIONI_FILE = os.path.join(BASE_DIR, "data", "esclusioni.json")
 
 # File dell'estrazione temporaneo
-ESTRATTI_FILE = os.path.join(tempfile.gettempdir(), "estratti.json")
+#ESTRATTI_FILE = os.path.join(tempfile.gettempdir(), "estratti.json")
+ESTRATTI_FILE = os.path.join(BASE_DIR, "data", "estratti.json")
 
 # --- Carica famiglie ---
 with open(PERSONE_FILE, encoding="utf-8") as f:
@@ -295,4 +296,5 @@ def admin_reset():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
 
