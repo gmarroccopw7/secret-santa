@@ -215,7 +215,7 @@ def fai_estrazione():
         #estratti[estrattore] = random.choice(disponibili)
         
         estratto_finale = random.choice(disponibili)
-        db_set_estratt o(estrattore, estratto_finale)
+        db_set_estratto(estrattore, estratto_finale)
 
 
 
@@ -322,4 +322,5 @@ def admin_reset():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
 
