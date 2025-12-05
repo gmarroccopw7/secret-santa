@@ -214,7 +214,9 @@ def fai_estrazione():
 
         #estratti[estrattore] = random.choice(disponibili)
         
-        db_set_estratto(estrattore, valore)
+        estratto_finale = random.choice(disponibili)
+        db_set_estratt o(estrattore, estratto_finale)
+
 
 
     # --- FIGLIO ---
@@ -225,7 +227,9 @@ def fai_estrazione():
             return "Errore: nessuna assegnazione valida trovata", 500
 
         #estratti[estrattore] = MAPPA_FIGLI[estrattore]
-        db_set_estratto(estrattore, valore)
+        valore_figlio = MAPPA_FIGLI[estrattore]
+        db_set_estratto(estrattore, valore_figlio)
+
 
 
     else:
@@ -318,5 +322,4 @@ def admin_reset():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
 
