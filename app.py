@@ -239,7 +239,7 @@ def fai_estrazione():
     #with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
     #    json.dump(estratti, f, indent=4)
     
-    db_set_estratto(estrattore, valore)
+    #db_set_estratto(estrattore, valore)
 
     
     return redirect("/estrazione")
@@ -322,5 +322,6 @@ def admin_reset():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
 
 
