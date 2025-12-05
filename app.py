@@ -77,9 +77,11 @@ PERSONE_FILE = os.path.join(BASE_DIR, "data", "persone.json")
 ASSOCIAZIONE_FILE = os.path.join(BASE_DIR, "data", "associazioni.json")
 ESCLUSIONI_FILE = os.path.join(BASE_DIR, "data", "esclusioni.json")
 
-# File dell'estrazione temporaneo
-#ESTRATTI_FILE = os.path.join(tempfile.gettempdir(), "estratti.json")
+# File dell'estrazione persistente
 ESTRATTI_FILE = os.path.join(BASE_DIR, "data", "estratti.json")
+
+print("ESTRATTI FILE:", ESTRATTI_FILE)
+
 
 # --- Carica famiglie ---
 with open(PERSONE_FILE, encoding="utf-8") as f:
@@ -121,16 +123,16 @@ for i, nome in enumerate(tutti):
     ICON_MAP[nome] = ICONE[i % len(ICONE)]
 
 # Ricrea il file estratti a ogni avvio (come nel tuo attuale comportamento)
-#if os.path.exists(ESTRATTI_FILE):
-#    os.remove(ESTRATTI_FILE)
-#
-#with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
-#    json.dump({}, f)
-# Creiamo il file estratti solo se non esiste
+# if os.path.exists(ESTRATTI_FILE):
+#     os.remove(ESTRATTI_FILE)
+
+# with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+#     json.dump({}, f)
 
 if not os.path.exists(ESTRATTI_FILE):
     with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
-        json.dump({}, f)
+        json.dump({}, f, indent=4)
+
 
 # --- Calcola mappa globale dei figli (figlio -> figlio_estratto) ---
 MAPPA_FIGLI = calcola_assegnazione_figli(FIGLI, ASSOCIAZIONI, ESCLUSIONI)
@@ -296,5 +298,3 @@ def admin_reset():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
-
