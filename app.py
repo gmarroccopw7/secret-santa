@@ -4,8 +4,11 @@ import random
 import tempfile
 import traceback
 from flask import Flask, render_template, redirect, session, request
+from db import init_db, db_get_estratti, db_set_estratto, db_reset_estrazioni
+
 
 app = Flask(__name__)
+init_db()
 app.secret_key = "supersecretkey123"
 app.debug = True
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -130,8 +133,10 @@ for i, nome in enumerate(tutti):
 #     json.dump({}, f)
 
 if not os.path.exists(ESTRATTI_FILE):
-    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
-        json.dump({}, f, indent=4)
+    #with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+    #    json.dump({}, f, indent=4)
+
+    db_set_estratto(estrattore, valore)
 
 
 # --- Calcola mappa globale dei figli (figlio -> figlio_estratto) ---
@@ -159,8 +164,9 @@ def estrazione():
 
     # Carica estratti attuali
     try:
-        with open(ESTRATTI_FILE) as f:
-            estratti = json.load(f)
+        #with open(ESTRATTI_FILE) as f:
+            #estratti = json.load(f)
+         estratti = db_get_estratti()
     except:
         estratti = {}
 
@@ -182,8 +188,9 @@ def fai_estrazione():
 
     # Carica estratti attuali
     try:
-        with open(ESTRATTI_FILE) as f:
-            estratti = json.load(f)
+        #with open(ESTRATTI_FILE) as f:
+            #estratti = json.load(f)
+        estratti = db_get_estratti()
     except:
         estratti = {}
 
@@ -205,7 +212,10 @@ def fai_estrazione():
         if not disponibili:
             disponibili = candidati
 
-        estratti[estrattore] = random.choice(disponibili)
+        #estratti[estrattore] = random.choice(disponibili)
+        
+        db_set_estratto(estrattore, valore)
+
 
     # --- FIGLIO ---
     elif estrattore in FIGLI:
@@ -214,15 +224,20 @@ def fai_estrazione():
         if estrattore not in MAPPA_FIGLI:
             return "Errore: nessuna assegnazione valida trovata", 500
 
-        estratti[estrattore] = MAPPA_FIGLI[estrattore]
+        #estratti[estrattore] = MAPPA_FIGLI[estrattore]
+        db_set_estratto(estrattore, valore)
+
 
     else:
         return "Errore: estrattore sconosciuto", 400
 
     # Salva gli estratti
-    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
-        json.dump(estratti, f, indent=4)
+    #with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+    #    json.dump(estratti, f, indent=4)
+    
+    db_set_estratto(estrattore, valore)
 
+    
     return redirect("/estrazione")
 
 
@@ -253,8 +268,9 @@ def admin():
 
     # carica estrazioni aggiornate
     try:
-        with open(ESTRATTI_FILE) as f:
-            estratti = json.load(f)
+        #with open(ESTRATTI_FILE) as f:
+            #estratti = json.load(f)
+        estratti = db_get_estratti()
     except:
         estratti = {}
 
@@ -289,9 +305,13 @@ def admin_reset():
         return redirect("/")
 
     # reset estratti.json
-    with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
-        json.dump({}, f)
+    #with open(ESTRATTI_FILE, "w", encoding="utf-8") as f:
+    #    json.dump({}, f)
+    
+    db_set_estratto(estrattore, valore)
+    db_reset_estrazioni()
 
+    
     return redirect("/admin")
 
 
